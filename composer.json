@@ -1,0 +1,6 @@
+{
+    "require": {
+        "ralouphie/mimey": "^1.0",
+        "google/apiclient": "^2.0"
+    }
+}

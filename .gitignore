@@ -1,5 +1,6 @@
+/vendor/
+test.php
 credentials
-google-api*
 *.png
 *.PNG
 *.jpg
