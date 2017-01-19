@@ -5,31 +5,15 @@
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/Queued_file.php';
 
 define('CREDENTIALS_DIR', 'credentials/');
 
 define('APPLICATION_NAME', 'GoogleDrive Client');
 define('CREDENTIALS_PATH', CREDENTIALS_DIR.'credentials.json');
 define('CLIENT_SECRET_PATH', CREDENTIALS_DIR.'client_secret.json');
-// define('SCOPES', implode(' ', array(
-//     ::DRIVE_FILE)
-// ));
 
-// class Queued_File extends Google_Service_Drive_DriveFile{
-// 	private $uploaded = false;
-// 	private $checked = false; 
-// 	private $baseFolder = '';
 
-// 	public setUploaded(){ $this->uploaded = true; }
-// 	public setCheked(){ $this->checked = true; }
-
-// 	public isUploaded(){ return $this->uploaded;  }
-// 	public isCheked(){ return $this->checked; }
-
-// 	public setBaseFolder($path){
-// 		$this -> baseFolder = $path;
-// 	}
-// }
 
 
 class GDrive_Uploader extends Google_Client {
@@ -37,6 +21,7 @@ class GDrive_Uploader extends Google_Client {
 	private $service;
 	private $uploadQueue;
 	private $maxQueue;
+	private static $mimeChecker;
 	/**
 	 * Constructor
 	 */
@@ -89,29 +74,77 @@ class GDrive_Uploader extends Google_Client {
 
 	}
 
+	public function extensionToMIME($ext){
+		return GDrive_Selective_Uploader::getMIMEChecker() -> getMimeType($ext);
+	}
+
+	public function MIMEToExtensions($type){
+		return GDrive_Selective_Uploader::getMIMEChecker() -> getAllExtensions($type);		
+	}
+
+	private static function getMIMEChecker() {
+	    if (!isset(self::$mimeChecker))
+	        self::$mimeChecker = new \Mimey\MimeTypes;
+	    return self::$mimeChecker;
+	}
+
+	private function getFilenameAndExtension($path){
+		$fileNameParts = explode("." , basename($path));
+		
+		if (count($fileNameParts) != 2){
+			 throw new GD_Uploader_Exception("BAD_FILE_NAME", "Dots not allowed in filename: ". basename($path));}
+
+		return $fileNameParts;
+	}
+
+	private function getExtensionFromPath($path){
+		return $this->getFilenameAndExtension($path)[1];
+	}
+
+	private function getNameFromPath($path){
+		return $this->getFilenameAndExtension($path)[0];
+	}
+
+	public function createQueuedFile($args){
+		$file = new Queued_File();
+		$file->setName($this->getNameFromPath( $args['path']) );
+		$file->setDescription( $args['description'] );
+		$file->setMimeType( $this->extensionToMIME($this->getExtensionFromPath($args['path'])));
+
+		if ( !($data = file_get_contents($args['path']) ) )
+			throw new GD_Uploader_Exception("ERROR_READING_FILE","\nThe file: \n".$args['path']."\ndoesn't exists or is corrupted");
+		
+		$file->setData($data);
+		return $file;
+	}
+
+	public function addToQueue($file){
+		if (!is_a($file, "Queued_File"))
+			return null;
+		$this->uploadQueue[] = $file;
+	}	
+
+	public function processQueue(){
+		foreach ($this->uploadQueue as $task) {
+			$this->uploadFile($task);
+		}
+	}
+
 	/**
 	 * Upload a file
 	 * TODOC
 	 */
 	
-	protected function uploadFile($path, $description){
-		//Insert a file
-		$file = new Google_Service_Drive_DriveFile();
-		$file->setName($name.'.jpg');
-		$file->setDescription($description);
-		$file->setMimeType('image/jpeg');
+	protected function uploadFile($file){
+		try {
+			$createdFile = $this->service->files->create($file, array(
+		       'data' => $file->getData(),
+		       'mimeType' => $file->getMimeType(),
+		       'uploadType' => 'multipart'
+			    ));
 
-		$data = file_get_contents($path);
-
-		 try {
-			 $createdFile = $this->service->files->create($file, array(
-			       'data' => $data,
-			       'mimeType' => 'image/jpeg',
-			       'uploadType' => 'multipart'
-			     ));
-
-			 print_r($createdFile);
-		 	
+			print_r($createdFile->id);
+ 	
 		} catch (Google_Service_Exception $e) {
 			print_r("Error while uploading file\n");
 			foreach ($e->getErrors() as $error) {
@@ -122,88 +155,31 @@ class GDrive_Uploader extends Google_Client {
 		}
 	}
 
+	//TOERASE
 	public function PUblicuploadFile($name, $description, $path){
 		$this->uploadFile($name, $description, $path);
 	}
 }
 
 
-class GDrive_Selective_Uploader extends GDrive_Uploader{
-	private $allowedTypes;
-	private static $mimeChecker;
 
-	private static function getMIMEChecker() {
 
-	    if (!isset(self::$mimeChecker)) {
-	        self::$mimeChecker = new \Mimey\MimeTypes;
-	    }
-
-	    return self::$mimeChecker;
+class GD_Uploader_Exception extends Exception{
+	public function __construct($t, $msg){
+		$this -> type = $t;
+		$this -> message = $msg;
 	}
 
-	private function setAllowed($allowedExtensions){
-		foreach ($allowedExtensions as $a) {
-			$type = GDrive_Selective_Uploader::getMIMEChecker() -> getMimeType($a);
-			if (!in_array($type, $this->allowedTypes))
-				$this->allowedTypes[] = $type;
-		}
-		//TOERASE
-		var_dump($this->allowedTypes);
-
-	}
-
-	public function __construct($allowed = array() ,$max = 8){
-		parent::__construct($max);
-		$this->allowedTypes = array();
-		$this->setAllowed($allowed);
-
-	}
-
-	// private function getExtensionFromPath($path){
-
-	// 	return $extension;
-	// }
-
-	// private function getFilenameFromPath($path, $trimExtension){
-	// 	$fileNameParts = explode(basename($path), ".");
-		
-	// 	if ()
-
-	// 	return basename
-	// }
-
+	protected $type;
+	protected $message;
 }
 
 
 
  ?>
 
-<?php 
-/**
-* GDrive_Uploader application
-*/
-// try {
-// 	$client = new GDrive_Uploader();
-// 	$client -> init();
-	
-// } catch (Google_Service_Exception $e) {
-// 	print_r("Error while requesting autorization\n");
-// 	foreach ($e->getErrors() as $error) {
-// 		print_r($error["message"]);
-// 	}
-// 	exit();
-// }
 
-// $client->PUblicuploadFile('testUploadMemberFN'.'.jpg',
-// 							'Another test document',
-// 							'a.jpg');
 
-?>
-
- <?php
- 	$p = new GDrive_Selective_Uploader(array("jpg", "pdf"));
-
-  ?>
   <?php 
   /**
    * Function definition
@@ -222,44 +198,6 @@ class GDrive_Selective_Uploader extends GDrive_Uploader{
 	   return str_replace('~', realpath($homeDirectory), $path);
 	 }
 
-  
- //  function getClient() {
- //   $client = new GDrive_Uploader();
- //   $client->setApplicationName(APPLICATION_NAME);
- //   $client->setScopes( Google_Service_Drive::DRIVE_FILE );
- //   $client->setAuthConfig(CLIENT_SECRET_PATH);
- //   $client->setAccessType('offline');
-
- //   // Load previously authorized credentials from a file.
- //   $credentialsPath = expandHomeDirectory(CREDENTIALS_PATH);
- //   if (file_exists($credentialsPath)) {
- //     $accessToken = json_decode(file_get_contents($credentialsPath), true);
- //   } else {
- //     // Request authorization from the user.
- //     $authUrl = $client->createAuthUrl();
- //     printf("Open the following link in your browser:\n%s\n", $authUrl);
- //     print 'Enter verification code: ';
- //     $authCode = trim(fgets(STDIN));
-
- //     // Exchange authorization code for an access token.
- //     $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
-
- //     // Store the credentials to disk.
- //     if(!file_exists(dirname($credentialsPath))) {
- //       mkdir(dirname($credentialsPath), 0700, true);
- //     }
- //     file_put_contents($credentialsPath, json_encode($accessToken));
- //     printf("Credentials saved to %s\n", $credentialsPath);
- //   }
- //   $client->setAccessToken($accessToken);
-
- //   // Refresh the token if it's expired.
- //   if ($client->isAccessTokenExpired()) {
- //     $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
- //     file_put_contents($credentialsPath, json_encode($client->getAccessToken()));
- //   }
- //   return $client;
- // }
-
+ 
 
    ?>
