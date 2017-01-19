@@ -3,8 +3,10 @@ require_once __DIR__ . '/GD_selective_uploader.php';
 /**
 * GDrive_Uploader application
 */
+
+$types = array("jpg", "png", "tif");
 try {
-	$client = new GDrive_Uploader();
+	$client = new GDrive_Selective_Uploader($types, 3*1024*1024, 5);
 	$client -> init();
 	
 } catch (Google_Service_Exception $e) {
@@ -17,27 +19,17 @@ try {
 
 $fileArgs = array(
 			"path" => 'a.jpg',
-			"description" => "a file upladed from the QUEUE");
-
-
-$thefile = $client->createQueuedFile($fileArgs);
-
-$client->addToQueue($thefile);
-
-$fileArgs['path'] = "maggot-eyeofscience.jpg";
-
-$thefile = $client->createQueuedFile($fileArgs);
-
-$client->addToQueue($thefile);
-
-$fileArgs['path'] = "testUpload2.jpg";
+			"description" => "Selective upload");
 
 
 $thefile = $client->createQueuedFile($fileArgs);
 
 
+for ($i=0; $i < 10; $i++) { 
+	# code...
+	$client->addToQueue($thefile);
+}
 
-$client->addToQueue($thefile);
 
 $client->processQueue();
 

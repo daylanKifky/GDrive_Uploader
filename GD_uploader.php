@@ -97,12 +97,16 @@ class GDrive_Uploader extends Google_Client {
 		return $fileNameParts;
 	}
 
-	private function getExtensionFromPath($path){
+	protected function getExtensionFromPath($path){
 		return $this->getFilenameAndExtension($path)[1];
 	}
 
-	private function getNameFromPath($path){
+	protected function getNameFromPath($path){
 		return $this->getFilenameAndExtension($path)[0];
+	}
+
+	protected function getMIMEFromPath($path){
+		return $this->extensionToMIME($this->getExtensionFromPath($path));
 	}
 
 	public function createQueuedFile($args){
@@ -120,16 +124,19 @@ class GDrive_Uploader extends Google_Client {
 	}
 
 	public function addToQueue($file){
-		if (!is_a($file, "Queued_File"))
+		if (!($file instanceof Queued_File) || 
+			count($this->uploadQueue) >= $this->maxQueue)
 			return null;
+			//TODO: Alert!!
+			
 		$this->uploadQueue[] = $file;
-		print($file->getName()."\n");
+		//TODO:log
 	}	
 
 	public function processQueue(){
 		$this->uploadQueue();
 		$this->checkQueue();
-
+		//TODO: log
 	}
 
 	private function uploadQueue(){
@@ -141,16 +148,13 @@ class GDrive_Uploader extends Google_Client {
 
 	private function checkQueue(){
 		foreach ($this->uploadQueue as $task) {
-			if ($id = $task->isUploaded()){
-
+			if ($id = $task->isUploaded())
 				 if ($this->checkFile($id) == $task->getLocalChecksum()){
-	 				 	echo "CHEKED: ". $task->getName();
+	 				 	//TODO: log
 		 				$task->setChecked();
+		 				continue;
 	 				}
-
-			} else {
-				echo "****ERROR!! : ". $task->getName();
-			}
+	 		//TODO: alert!!
 		}
 	}
 
@@ -164,10 +168,11 @@ class GDrive_Uploader extends Google_Client {
 			$createdFile = $this->service->files->create($file, array(
 		       'data' => $file->getData(),
 		       'mimeType' => $file->getMimeType(),
-		       'uploadType' => 'multipart'
+		       'uploadType' => 'resumable'
 			    ));
 
-			// echo ($createdFile->id);
+			//TODO:log;
+			echo $createdFile->id ."\n";
 			return $createdFile->id;
  	
 		} catch (Google_Service_Exception $e) {
