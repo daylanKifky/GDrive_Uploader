@@ -113,7 +113,8 @@ class GDrive_Uploader extends Google_Client {
 
 		if ( !($data = file_get_contents($args['path']) ) )
 			throw new GD_Uploader_Exception("ERROR_READING_FILE","\nThe file: \n".$args['path']."\ndoesn't exists or is corrupted");
-		
+
+		$file->setLocalChecksum(md5($data));
 		$file->setData($data);
 		return $file;
 	}
@@ -122,11 +123,34 @@ class GDrive_Uploader extends Google_Client {
 		if (!is_a($file, "Queued_File"))
 			return null;
 		$this->uploadQueue[] = $file;
+		print($file->getName()."\n");
 	}	
 
 	public function processQueue(){
+		$this->uploadQueue();
+		$this->checkQueue();
+
+	}
+
+	private function uploadQueue(){
 		foreach ($this->uploadQueue as $task) {
-			$this->uploadFile($task);
+			$id = $this->uploadFile($task);
+			$task->setRemoteId($id);
+		}	
+	}
+
+	private function checkQueue(){
+		foreach ($this->uploadQueue as $task) {
+			if ($id = $task->isUploaded()){
+
+				 if ($this->checkFile($id) == $task->getLocalChecksum()){
+	 				 	echo "CHEKED: ". $task->getName();
+		 				$task->setChecked();
+	 				}
+
+			} else {
+				echo "****ERROR!! : ". $task->getName();
+			}
 		}
 	}
 
@@ -143,7 +167,8 @@ class GDrive_Uploader extends Google_Client {
 		       'uploadType' => 'multipart'
 			    ));
 
-			print_r($createdFile->id);
+			// echo ($createdFile->id);
+			return $createdFile->id;
  	
 		} catch (Google_Service_Exception $e) {
 			print_r("Error while uploading file\n");
@@ -155,9 +180,11 @@ class GDrive_Uploader extends Google_Client {
 		}
 	}
 
-	//TOERASE
-	public function PUblicuploadFile($name, $description, $path){
-		$this->uploadFile($name, $description, $path);
+	protected function checkFile($id){
+		$remoteHash = $this->service->files->get($id, array(
+		  'fields' => 'md5Checksum' ))['md5Checksum'];
+		return $remoteHash;
+
 	}
 }
 

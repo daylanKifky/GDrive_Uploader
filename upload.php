@@ -32,7 +32,10 @@ $client->addToQueue($thefile);
 
 $fileArgs['path'] = "testUpload2.jpg";
 
+
 $thefile = $client->createQueuedFile($fileArgs);
+
+
 
 $client->addToQueue($thefile);
 
