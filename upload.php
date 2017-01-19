@@ -3,10 +3,14 @@ require_once __DIR__ . '/GD_selective_uploader.php';
 /**
 * GDrive_Uploader application
 */
+var_dump( ini_get('max_execution_time') );
+//Can I pass a timeout to guzzle?
+//http://docs.guzzlephp.org/en/latest/request-options.html#timeout
+
 
 $types = array("jpg", "png", "tif");
 try {
-	$client = new GDrive_Selective_Uploader($types, 3*1024*1024, 5);
+	$client = new GDrive_Selective_Uploader($types);
 	$client -> init();
 	
 } catch (Google_Service_Exception $e) {
@@ -18,20 +22,21 @@ try {
 }
 
 $fileArgs = array(
-			"path" => 'a.jpg',
+			"path" => 'testUpload2.jpg',
 			"description" => "Selective upload");
 
 
 $thefile = $client->createQueuedFile($fileArgs);
 
 
-for ($i=0; $i < 10; $i++) { 
-	# code...
-	$client->addToQueue($thefile);
-}
+
+$client->addToQueue($thefile);
 
 
-$client->processQueue();
+
+// $client->processQueue();
+	
+
 
 
 ?>

@@ -158,11 +158,10 @@ class GDrive_Uploader extends Google_Client {
 		}
 	}
 
-	/**
-	 * Upload a file
-	 * TODOC
-	 */
-	
+	private function clearQueue(){
+		//TODO delete cheked files and log the state, or report the problem
+	}
+
 	protected function uploadFile($file){
 		try {
 			$createdFile = $this->service->files->create($file, array(
@@ -176,13 +175,24 @@ class GDrive_Uploader extends Google_Client {
 			return $createdFile->id;
  	
 		} catch (Google_Service_Exception $e) {
-			print_r("Error while uploading file\n");
+			print_r("Google refused the conection\n");
 			foreach ($e->getErrors() as $error) {
 				print_r($error["message"]);
 			}
-
+			//TODO: alert and handle properly
 			exit();
+
+		} catch (TransferException $e) {
+			print_r("Transfer error\n");
+			foreach ($e->getErrors() as $error) {
+				print_r($error["message"]);
+			}
+			//TODO: alert and handle properly
+			////http://docs.guzzlephp.org/en/latest/quickstart.html#exceptions
+			exit();	
 		}
+
+
 	}
 
 	protected function checkFile($id){
