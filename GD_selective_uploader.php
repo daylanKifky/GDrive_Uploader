@@ -41,6 +41,9 @@ class GDrive_Selective_Uploader extends GDrive_Uploader{
 		return parent::createQueuedFile($args);
 	}	
 
+	public function getAllowedTypes(){
+		return $this->allowedTypes;
+	}
 
 
 	// private function getExtensionFromPath($path){

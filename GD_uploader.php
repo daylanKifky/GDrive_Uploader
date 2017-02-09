@@ -7,7 +7,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Queued_file.php';
 
-define('CREDENTIALS_DIR', 'credentials/');
+define('CREDENTIALS_DIR', __DIR__ .'/credentials/');
 
 define('APPLICATION_NAME', 'GoogleDrive Client');
 define('CREDENTIALS_PATH', CREDENTIALS_DIR.'credentials.json');
@@ -97,7 +97,7 @@ class GDrive_Uploader extends Google_Client {
 		return $fileNameParts;
 	}
 
-	protected function getExtensionFromPath($path){
+	public function getExtensionFromPath($path){
 		return $this->getFilenameAndExtension($path)[1];
 	}
 
