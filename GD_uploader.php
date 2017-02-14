@@ -135,7 +135,7 @@ class GDrive_Uploader extends Google_Client {
 
 	public function processQueue(){
 		$this->uploadQueue();
-		$this->checkQueue();
+		return $this->checkQueue();
 		//TODO: log
 	}
 
@@ -147,15 +147,18 @@ class GDrive_Uploader extends Google_Client {
 	}
 
 	private function checkQueue(){
+		$res['cheked'] = array();
+		$res['errors'] = array();
 		foreach ($this->uploadQueue as $task) {
 			if ($id = $task->isUploaded())
 				 if ($this->checkFile($id) == $task->getLocalChecksum()){
-	 				 	//TODO: log
+	 				 	$res['cheked'][$task->getName()] = $task->getDescription(); 
 		 				$task->setChecked();
 		 				continue;
 	 				}
-	 		//TODO: alert!!
+	 		$res['errors'][$task->getName()] = $task->getDescription();
 		}
+		return $res;
 	}
 
 	private function clearQueue(){
