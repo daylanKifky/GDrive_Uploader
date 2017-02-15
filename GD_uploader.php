@@ -114,7 +114,7 @@ class GDrive_Uploader extends Google_Client {
 		$file->setName($this->getNameFromPath( $args['path']) );
 		$file->setDescription( $args['description'] );
 		$file->setMimeType( $this->extensionToMIME($this->getExtensionFromPath($args['path'])));
-
+		$file->setParents(array($args['parent']));
 		if ( !($data = file_get_contents($args['path']) ) )
 			throw new GD_Uploader_Exception("ERROR_READING_FILE","\nThe file: \n".$args['path']."\ndoesn't exists or is corrupted");
 
@@ -174,7 +174,6 @@ class GDrive_Uploader extends Google_Client {
 			    ));
 
 			//TODO:log;
-			echo $createdFile->id ."\n";
 			return $createdFile->id;
  	
 		} catch (Google_Service_Exception $e) {

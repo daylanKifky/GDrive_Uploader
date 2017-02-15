@@ -29,8 +29,9 @@ $driveService = new Google_Service_Drive($client);
 
 //Create folder and retrive ID
 $fileMetadata = new Google_Service_Drive_DriveFile(array(
-  'name' => 'Edicion 2017_01',
-  'mimeType' => 'application/vnd.google-apps.folder'));
+  'name' => 'TEST',
+  'mimeType' => 'application/vnd.google-apps.folder',
+  "parents" => array('0B4_-uenypLI7S0ZHMlM2VUl6a1U' )));
 
 $file = $driveService->files->create($fileMetadata, array(
   'fields' => 'id'));
@@ -39,28 +40,27 @@ $file = $driveService->files->create($fileMetadata, array(
 
 printf("Folder ID: %s\n", $file->id);
 
-file_put_contents()
 
 
-//Search for all the folders
-$pageToken = null;
-do {
-  $response = $driveService->files->listFiles(array(
-    // 'q' => "mimeType='".FOLDER_MIME."'",
-    'q' => "mimeType='".FOLDER_MIME."' and trashed = false",
-    // 'q' => "'root' in parents",
-    'spaces' => 'drive',
-    'pageToken' => $pageToken,
-    // 'fields' => 'nextPageToken, files(id, name)',
-    // 
+// //Search for all the folders
+// $pageToken = null;
+// do {
+//   $response = $driveService->files->listFiles(array(
+//     // 'q' => "mimeType='".FOLDER_MIME."'",
+//     'q' => "mimeType='".FOLDER_MIME."' and trashed = false",
+//     // 'q' => "'root' in parents",
+//     'spaces' => 'drive',
+//     'pageToken' => $pageToken,
+//     // 'fields' => 'nextPageToken, files(id, name)',
+//     // 
     
-  ));
+//   ));
 
-  // var_dump($response);
-  foreach ($response->files as $file) {
-      printf("Found file: %s (%s)\n", $file->name, $file->id);
-  }
-} while ($pageToken != null);
+//   // var_dump($response);
+//   foreach ($response->files as $file) {
+//       printf("Found file: %s (%s)\n", $file->name, $file->id);
+//   }
+// } while ($pageToken != null);
 
 
 
