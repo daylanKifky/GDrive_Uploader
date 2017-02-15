@@ -35,7 +35,11 @@ $fileMetadata = new Google_Service_Drive_DriveFile(array(
 $file = $driveService->files->create($fileMetadata, array(
   'fields' => 'id'));
 
+
+
 printf("Folder ID: %s\n", $file->id);
+
+file_put_contents()
 
 
 //Search for all the folders
