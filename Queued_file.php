@@ -3,7 +3,7 @@
 class Queued_File extends Google_Service_Drive_DriveFile{
 	private $remoteId = null;
 	private $checked = false; 
-	private $baseFolder = '';
+	private $localPath = '';
 	private $fileData = null;
 	private $localChecksum;
 
@@ -20,8 +20,12 @@ class Queued_File extends Google_Service_Drive_DriveFile{
 	public function setChecked(){ $this->checked = true; }
 	public function isChecked(){ return $this->checked; }
 
-	public function setBaseFolder($path){
-		$this -> baseFolder = $path;
+	public function setLocalPath($path){
+		$this->localPath = $path;
+	}
+
+	public function getLocalpath(){
+		return $this->localPath;
 	}
 }
 

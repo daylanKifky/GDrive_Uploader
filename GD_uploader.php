@@ -111,6 +111,7 @@ class GDrive_Uploader extends Google_Client {
 
 	public function createQueuedFile($args){
 		$file = new Queued_File();
+		$file->setLocalPath($args['path']);
 		$file->setName($this->getNameFromPath( $args['path']) );
 		$file->setDescription( $args['description'] );
 		$file->setMimeType( $this->extensionToMIME($this->getExtensionFromPath($args['path'])));
@@ -161,7 +162,19 @@ class GDrive_Uploader extends Google_Client {
 		return $res;
 	}
 
-	private function clearQueue(){
+	public function clearQueue(){
+		$res['deleted'] = array();
+		$res['errors'] = array();
+		foreach ($this->uploadQueue as $task){
+			if ($id = $task->isChecked()){
+				if (unlink($task->getLocalpath()))
+					$res['deleted'][] = $task->getLocalpath();
+				else
+					$res['errors'][] = $task->getLocalpath();
+
+			}
+		}
+		return $res;
 		//TODO delete cheked files and log the state, or report the problem
 	}
 
