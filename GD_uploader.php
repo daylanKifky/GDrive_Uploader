@@ -112,7 +112,7 @@ class GDrive_Uploader extends Google_Client {
 	public function createQueuedFile($args){
 		$file = new Queued_File();
 		$file->setLocalPath($args['path']);
-		$file->setName($this->getNameFromPath( $args['path']) );
+		$file->setName(basename( $args['path']) );
 		$file->setDescription( $args['description'] );
 		$file->setMimeType( $this->extensionToMIME($this->getExtensionFromPath($args['path'])));
 		$file->setParents(array($args['parent']));
@@ -186,25 +186,25 @@ class GDrive_Uploader extends Google_Client {
 		       'uploadType' => 'resumable'
 			    ));
 
-			//TODO:log;
 			return $createdFile->id;
  	
 		} catch (Google_Service_Exception $e) {
-			print_r("Google refused the conection\n");
+			$err = array();
 			foreach ($e->getErrors() as $error) {
-				print_r($error["message"]);
+				$err[] = ($error["message"]);
 			}
-			//TODO: alert and handle properly
-			exit();
+
+			throw new GD_Uploader_Exception("CONNECTION_ERROR","Google refused the conection");
+
+
 
 		} catch (TransferException $e) {
-			print_r("Transfer error\n");
+			$err = array();
 			foreach ($e->getErrors() as $error) {
-				print_r($error["message"]);
+				$err[] = ($error["message"]);
 			}
-			//TODO: alert and handle properly
-			////http://docs.guzzlephp.org/en/latest/quickstart.html#exceptions
-			exit();	
+
+			throw new GD_Uploader_Exception("TRANSFER_ERROR","Error on transference");
 		}
 
 
@@ -227,7 +227,7 @@ class GD_Uploader_Exception extends Exception{
 		$this -> message = $msg;
 	}
 
-	protected $type;
+	public $type;
 	protected $message;
 }
 
