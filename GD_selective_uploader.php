@@ -1,6 +1,8 @@
 <?php 
 require_once __DIR__ . '/GD_uploader.php';
 
+
+
 class GDrive_Selective_Uploader extends GDrive_Uploader{
 	private $allowedTypes;
 	private $allowedSize;
@@ -28,15 +30,13 @@ class GDrive_Selective_Uploader extends GDrive_Uploader{
 	public function createQueuedFile($args){
 
 		if (filesize($args['path']) >= $this->allowedSize){
-			echo "FILE TOO BIG";
-			return null;
-			//TODO: alert!!
+			throw new GD_Uploader_Exception("FILE_TOO_BIG", "file: ".basename($args['path']) . " size: " .filesize($args['path']).", MAX ALLOWED: ".$this->allowedSize);
+
 			}
 
 		if (!in_array($this->getMIMEFromPath($args['path']), 
 					$this->allowedTypes)){
-			print_r("NOT ALLOWED TYPE \n");
-			return null;		
+			throw new GD_Uploader_Exception("BAD_FILETYPE", "file: ".basename($args['path']) ." is of type: " . $this->getMIMEFromPath($args['path']));		
 			}
 		return parent::createQueuedFile($args);
 	}	
