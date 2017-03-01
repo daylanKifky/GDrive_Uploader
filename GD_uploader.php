@@ -175,7 +175,6 @@ class GDrive_Uploader extends Google_Client {
 			}
 		}
 		return $res;
-		//TODO delete cheked files and log the state, or report the problem
 	}
 
 	protected function uploadFile($file){

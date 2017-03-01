@@ -3,6 +3,7 @@
 require_once("../i-db.php");
 require_once("../session_manager.php");
 require_once __DIR__ . '/GD_uploader.php';
+define("LOCKED" , true);
 
 class Folder_Manager extends i_DB{
 	private $baseFolder;
@@ -20,6 +21,7 @@ class Folder_Manager extends i_DB{
 				"Unknown error", "Folder_manager", 3);
 
 		parent::__construct($args);
+		parent::DB_connect($args);
 		$this->params = $args;
 		$this->baseFolder = $args['IF_CURRENT_EDICION'];
 
@@ -47,7 +49,7 @@ class Folder_Manager extends i_DB{
 		return $result->fetch_assoc()['folder_id'];
 	}
 
-	private function getEditionFolder(){
+	public function getEditionFolder(){
 		if ($this->cachedEditionFolder)
 			return $this->cachedEditionFolder;
 
@@ -56,7 +58,7 @@ class Folder_Manager extends i_DB{
 			$this->baseFolder));
 
 		$id = false;
-		if ($result->num_rows < 1)
+		if (!$result || $result->num_rows < 1)
 			$id = $this->createFolder($this->baseFolder, null, 'root');
 
 		if (!$result)
@@ -66,7 +68,7 @@ class Folder_Manager extends i_DB{
 		return $this->cachedEditionFolder;
 	}
 
-	private function fetchFirstOrderFolders(){
+	public function fetchFirstOrderFolders(){
 		$q = sprintf(
 			"SELECT * FROM %s WHERE `parent_id` = (SELECT `folder_id` from `%s` WHERE `folder_name` = '%s')",
 			$this->params['IFDB_EXT_FOLDERS'],
@@ -101,7 +103,7 @@ class Folder_Manager extends i_DB{
 		return $folders;
 	}
 
-	private function fetchSecondOrderFolders($parent){
+	public function fetchSecondOrderFolders($parent){
 		$q = sprintf(
 			"SELECT * FROM %s WHERE `parent_id` = '%s'",
 			$this->params['IFDB_EXT_FOLDERS'],
@@ -187,40 +189,44 @@ class Folder_Manager extends i_DB{
 
 }
 
-try {
-	$client = new GDrive_Uploader();
-	$client -> init();
-	
-} catch (Google_Service_Exception $e) {
-	print_r("Error while requesting autorization\n");
-	foreach ($e->getErrors() as $error) {
-		print_r($error["message"]);
+function createHierarchy (){
+	if (LOCKED) die("cannot perform operation");
+
+	try {
+		$client = new GDrive_Uploader();
+		$client -> init();
+		
+	} catch (Google_Service_Exception $e) {
+		print_r("Error while requesting autorization\n");
+		foreach ($e->getErrors() as $error) {
+			print_r($error["message"]);
+		}
+		exit();
 	}
-	exit();
+
+	$fm = new Folder_manager($client);
+
+	// echo $fm->getFolder(4,10);
+
+	$fm->getEditionFolder();
+	// var_dump($fm->fetchFirstOrderFolders());
+
+	$barrios = $fm->fetchFirstOrderFolders();
+
+	var_dump($barrios);
+
+	while ($barrio = $barrios->fetch_assoc()){;
+
+		echo $barrio['folder_name'];
+		echo "\n";
+		echo $barrio['folder_id'];
+		echo "\n";
+
+		$cats = $fm->fetchSecondOrderFolders($barrio['folder_id']);
+
+		// var_dump($cats);
+
+	}
 }
-
-$fm = new Folder_manager($client);
-
-echo $fm->getFolder(4,10);
-
-// // $fm->getEditionFolder();
-// // var_dump($fm->fetchFirstOrderFolders());
-
-// $barrios = $fm->fetchFirstOrderFolders();
-
-// var_dump($barrios);
-
-// while ($barrio = $barrios->fetch_assoc()){;
-
-// 	echo $barrio['folder_name'];
-// 	echo "\n";
-// 	echo $barrio['folder_id'];
-// 	echo "\n";
-
-// 	$cats = $fm->fetchSecondOrderFolders($barrio['folder_id']);
-
-// 	var_dump($cats);
-
-// }
 
  ?>
