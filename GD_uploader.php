@@ -151,12 +151,14 @@ class GDrive_Uploader extends Google_Client {
 		$res['cheked'] = array();
 		$res['errors'] = array();
 		foreach ($this->uploadQueue as $task) {
-			if ($id = $task->isUploaded())
-				 if ($this->checkFile($id) == $task->getLocalChecksum()){
+			if ($id = $task->isUploaded()){
+				if ($task->getMimeType() == 'application/vnd.google-apps.document' ||
+					$this->checkFile($id) == $task->getLocalChecksum()){
 	 				 	$res['cheked'][$task->getName()] = $task->getDescription(); 
 		 				$task->setChecked();
 		 				continue;
 	 				}
+	 			}
 	 		$res['errors'][$task->getName()] = $task->getDescription();
 		}
 		return $res;
@@ -178,10 +180,14 @@ class GDrive_Uploader extends Google_Client {
 	}
 
 	protected function uploadFile($file){
+		$mimeType = $file->getMimeType();
+		if ($mimeType == 'text/html') 
+ 		 	$file->setMimeType('application/vnd.google-apps.document');
+
 		try {
 			$createdFile = $this->service->files->create($file, array(
 		       'data' => $file->getData(),
-		       'mimeType' => $file->getMimeType(),
+		       'mimeType' => $mimeType,
 		       'uploadType' => 'resumable'
 			    ));
 

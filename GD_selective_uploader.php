@@ -11,7 +11,7 @@ class GDrive_Selective_Uploader extends GDrive_Uploader{
 								$size=20*1024*1024,
 								$max = 8){
 		parent::__construct($max);
-		$this->allowedTypes = array();
+		$this->allowedTypes = array('text/html');
 		$this->setAllowed($allowed);
 		$this->allowedSize = $size;
 	}
